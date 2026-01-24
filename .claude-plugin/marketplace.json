@@ -1,11 +1,11 @@
 {
-  "name": "anthropic-agent-skills",
+  "name": "tdynamicl-agent-skills",
   "owner": {
-    "name": "Keith Lazuka",
-    "email": "klazuka@anthropic.com"
+    "name": "tdynamicl",
+    "email": "tdynamicl@github.com"
   },
   "metadata": {
-    "description": "Anthropic example skills",
+    "description": "Tdynamicl example skills",
     "version": "1.0.0"
   },
   "plugins": [
