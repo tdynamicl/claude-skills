@@ -40,6 +40,15 @@
         "./skills/web-artifacts-builder",
         "./skills/webapp-testing"
       ]
+    },
+    {
+      "name": "mysql-skills",
+      "description": "连接MySQL数据库，对表和表中的数据进行查询、修改、删除等操作。",
+      "source": "./skills/mysql",
+      "strict": false,
+      "skills": [
+        "./"
+      ]
     }
   ]
 }
