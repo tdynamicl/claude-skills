@@ -49,6 +49,15 @@
       "skills": [
         "./"
       ]
+    },
+    {
+      "name": "java-skills",
+      "description": "java相关操作，运行java类main方法、测试类。",
+      "source": "./skills/java",
+      "strict": false,
+      "skills": [
+        "./java-runner"
+      ]
     }
   ]
 }
