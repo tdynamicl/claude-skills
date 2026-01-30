@@ -1,0 +1,7 @@
+{
+  "java_home": "/path/to/java",
+  "maven_home": "/path/to/maven",
+  "maven_settings": "/path/to/settings.xml",
+  "default_jvm_args": ["-Xmx2g", "-Xms512m"],
+  "default_maven_args": ["-DskipTests=false"]
+}
