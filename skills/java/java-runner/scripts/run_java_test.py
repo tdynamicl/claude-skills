@@ -118,7 +118,7 @@ def run_java_test(test_name, config, java_home=None, maven_settings=None,
     cmd = [maven_cmd, 'test']
 
     # Add Maven settings
-    if config['maven_settings']:
+    if config['maven_settings'] and config['maven_settings'].strip():
         cmd.extend(['-s', config['maven_settings']])
 
     # Add test filter

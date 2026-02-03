@@ -78,7 +78,7 @@ def get_maven_classpath(maven_home, maven_settings, project_dir):
 
     cmd = [maven_cmd, 'dependency:build-classpath', '-DincludeScope=runtime']
 
-    if maven_settings:
+    if maven_settings and maven_settings.strip():
         cmd.extend(['-s', maven_settings])
 
     try:
@@ -114,6 +114,10 @@ def run_java_class(class_name, config, java_home=None, maven_settings=None,
     # Override config with command line arguments
     if java_home:
         config['java_home'] = java_home
+        os.environ['JAVA_HOME'] = java_home
+    elif config['java_home']:
+        os.environ['JAVA_HOME'] = config['java_home']
+
     if maven_settings:
         config['maven_settings'] = maven_settings
 
