@@ -17,6 +17,59 @@ description: 执行 Java 类的 main 方法或 JUnit 测试方法，适用于 Ma
 
 ## 执行步骤
 
+### 0. 配置检查与初始化
+
+在执行任何 Maven 或 Java 命令前，必须先确保配置已正确设置：
+
+#### 0.1 检查配置是否存在
+
+使用 `config_manager.py` 检查配置：
+
+```bash
+python scripts/config_manager.py show
+```
+
+#### 0.2 首次配置或配置缺失
+
+如果配置文件不存在（`~/.skills/java-skill.conf`），需要先进行配置：
+
+```bash
+python scripts/config_manager.py
+```
+
+系统会提示输入以下配置信息：
+- **Java Home 路径**：JDK 安装目录（例如：`C:/Program Files/Java/jdk-17`）
+- **Maven Home 路径**：Maven 安装目录（例如：`C:/apache-maven-3.9.0`）
+- **Maven settings.xml 路径**（可选）：自定义 Maven 配置文件路径
+- **默认 JVM 参数**（可选）：如 `-Xmx2g -Xms512m`
+- **默认 Maven 参数**（可选）：如 `-T 4`
+
+#### 0.3 重置配置
+
+如果需要修改配置：
+
+```bash
+python scripts/config_manager.py reset
+```
+
+#### 0.4 获取配置值
+
+在执行命令前，使用 `config_manager.load_config()` 获取配置：
+
+```python
+from config_manager import load_config
+
+config = load_config()
+java_home = config.get('java_home')
+maven_home = config.get('maven_home')
+maven_settings = config.get('maven_settings', '')
+```
+
+**重要说明**：
+- 所有 Maven 命令必须使用配置中的 `maven_home` 路径
+- 所有 Java 命令必须使用配置中的 `java_home` 路径
+- 如果配置了 `maven_settings`，Maven 命令需要添加 `-s` 参数指定配置文件
+
 ## 方式一：执行 Main 方法
 
 ### 1. 定位目标类
@@ -42,10 +95,15 @@ find "项目根目录" -maxdepth 2 -name "pom.xml" -type f
 
 ```bash
 cd "模块根目录"
-mvn install -DskipTests
+# 使用配置中的 Maven 路径执行命令
+{maven_home}/bin/mvn install -DskipTests
+# 如果配置了 maven_settings，添加 -s 参数
+{maven_home}/bin/mvn install -DskipTests -s {maven_settings}
 ```
 
 **说明**：
+- `{maven_home}` 需要替换为配置中的 Maven Home 路径
+- `{maven_settings}` 需要替换为配置中的 Maven settings.xml 路径（如果配置了）
 - `-DskipTests` 跳过测试，加快构建速度
 - 这一步确保模块间的依赖能够正确解析
 
@@ -55,10 +113,15 @@ mvn install -DskipTests
 
 ```bash
 cd "包含目标类的子模块目录"
-mvn exec:java -Dexec.mainClass="完整类名"
+# 使用配置中的 Maven 路径执行命令
+{maven_home}/bin/mvn exec:java -Dexec.mainClass="完整类名"
+# 如果配置了 maven_settings，添加 -s 参数
+{maven_home}/bin/mvn exec:java -Dexec.mainClass="完整类名" -s {maven_settings}
 ```
 
 **参数说明**：
+- `{maven_home}` 需要替换为配置中的 Maven Home 路径
+- `{maven_settings}` 需要替换为配置中的 Maven settings.xml 路径（如果配置了）
 - `exec:java` - Maven exec 插件的 goal
 - `-Dexec.mainClass` - 指定要执行的类的完全限定名（包名.类名）
 
@@ -68,10 +131,13 @@ mvn exec:java -Dexec.mainClass="完整类名"
 
 ```bash
 # 传递程序参数
-mvn exec:java -Dexec.mainClass="类名" -Dexec.args="arg1 arg2"
+{maven_home}/bin/mvn exec:java -Dexec.mainClass="类名" -Dexec.args="arg1 arg2"
 
 # 设置 JVM 参数
-mvn exec:java -Dexec.mainClass="类名" -Dexec.args="-Xmx2g -Denv=dev"
+{maven_home}/bin/mvn exec:java -Dexec.mainClass="类名" -Dexec.args="-Xmx2g -Denv=dev"
+
+# 如果配置了 maven_settings
+{maven_home}/bin/mvn exec:java -Dexec.mainClass="类名" -Dexec.args="arg1 arg2" -s {maven_settings}
 ```
 
 ## 方式二：执行 JUnit 测试
@@ -93,7 +159,10 @@ pattern: **/*Test.java
 
 ```bash
 cd "模块目录"
-mvn test-compile
+# 使用配置中的 Maven 路径执行命令
+{maven_home}/bin/mvn test-compile
+# 如果配置了 maven_settings
+{maven_home}/bin/mvn test-compile -s {maven_settings}
 ```
 
 ### 3. 运行测试
@@ -101,84 +170,88 @@ mvn test-compile
 #### 3.1 运行所有测试
 
 ```bash
-mvn test
+{maven_home}/bin/mvn test
+# 如果配置了 maven_settings
+{maven_home}/bin/mvn test -s {maven_settings}
 ```
 
 #### 3.2 运行特定测试类
 
 ```bash
-mvn test -Dtest=TestClassName
+{maven_home}/bin/mvn test -Dtest=TestClassName
+# 如果配置了 maven_settings
+{maven_home}/bin/mvn test -Dtest=TestClassName -s {maven_settings}
 ```
 
 **示例**：
 ```bash
 # 运行 UserServiceTest 类的所有测试方法
-mvn test -Dtest=UserServiceTest
+{maven_home}/bin/mvn test -Dtest=UserServiceTest
 
 # 支持通配符
-mvn test -Dtest=*ServiceTest
-mvn test -Dtest=User*Test
+{maven_home}/bin/mvn test -Dtest=*ServiceTest
+{maven_home}/bin/mvn test -Dtest=User*Test
 ```
 
 #### 3.3 运行特定测试方法
 
 ```bash
 # 运行单个测试方法
-mvn test -Dtest=TestClassName#testMethodName
+{maven_home}/bin/mvn test -Dtest=TestClassName#testMethodName
 
 # 运行多个测试方法
-mvn test -Dtest=TestClassName#testMethod1+testMethod2
+{maven_home}/bin/mvn test -Dtest=TestClassName#testMethod1+testMethod2
 ```
 
 **示例**：
 ```bash
 # 运行 UserServiceTest 类的 testCreateUser 方法
-mvn test -Dtest=UserServiceTest#testCreateUser
+{maven_home}/bin/mvn test -Dtest=UserServiceTest#testCreateUser
 
 # 运行多个测试方法
-mvn test -Dtest=UserServiceTest#testCreateUser+testUpdateUser
+{maven_home}/bin/mvn test -Dtest=UserServiceTest#testCreateUser+testUpdateUser
 
 # 使用通配符匹配测试方法
-mvn test -Dtest=UserServiceTest#test*User
+{maven_home}/bin/mvn test -Dtest=UserServiceTest#test*User
 ```
 
 #### 3.4 运行多个测试类
 
 ```bash
 # 使用逗号分隔多个测试类
-mvn test -Dtest=TestClass1,TestClass2
+{maven_home}/bin/mvn test -Dtest=TestClass1,TestClass2
 
 # 结合通配符
-mvn test -Dtest=*ServiceTest,*ControllerTest
+{maven_home}/bin/mvn test -Dtest=*ServiceTest,*ControllerTest
 ```
 
 ### 4. 测试输出控制
 
 ```bash
 # 显示详细测试输出
-mvn test -Dtest=TestClassName -X
+{maven_home}/bin/mvn test -Dtest=TestClassName -X
 
 # 跳过测试失败继续执行
-mvn test -Dmaven.test.failure.ignore=true
+{maven_home}/bin/mvn test -Dmaven.test.failure.ignore=true
 
 # 并行运行测试（加快速度）
-mvn test -T 4
+{maven_home}/bin/mvn test -T 4
 
 # 只运行失败的测试
-mvn test -Dsurefire.rerunFailingTestsCount=2
+{maven_home}/bin/mvn test -Dsurefire.rerunFailingTestsCount=2
 ```
 
 ### 5. JUnit 5 特定功能
 
 ```bash
 # 按标签运行测试（需要 @Tag 注解）
-mvn test -Dgroups="integration"
+{maven_home}/bin/mvn test -Dgroups="integration"
 
 # 排除特定标签
-mvn test -DexcludedGroups="slow"
+{maven_home}/bin/mvn test -DexcludedGroups="slow"
 
 # 组合使用
-mvn test -Dgroups="integration" -DexcludedGroups="slow"
+{maven_home}/bin/mvn test -Dgroups="integration" -DexcludedGroups="slow"
 ```
 
 ## 示例
@@ -186,51 +259,57 @@ mvn test -Dgroups="integration" -DexcludedGroups="slow"
 ### 示例 1: 执行 MyExcelUtilsTest 的 Main 方法
 
 ```bash
+# 0. 检查配置
+python scripts/config_manager.py show
+
 # 1. 查找类文件
 Glob: **/MyExcelUtilsTest.java
 # 结果: D:\workspace\...\xs-servarea-provider\src\main\java\cn\xs\servarea\test\MyExcelUtilsTest.java
 
-# 2. 安装依赖
+# 2. 安装依赖（假设 maven_home 为 C:/apache-maven-3.9.0）
 cd "D:\workspace\com.xiaoshi\gitlab\backendservice\motsa\xs-motsa-servarea"
-mvn install -DskipTests
+C:/apache-maven-3.9.0/bin/mvn install -DskipTests
 
 # 3. 执行 main 方法
 cd "D:\workspace\com.xiaoshi\gitlab\backendservice\motsa\xs-motsa-servarea\xs-servarea-provider"
-mvn exec:java -Dexec.mainClass="cn.xs.servarea.test.MyExcelUtilsTest"
+C:/apache-maven-3.9.0/bin/mvn exec:java -Dexec.mainClass="cn.xs.servarea.test.MyExcelUtilsTest"
 ```
 
 ### 示例 2: 运行单个 JUnit 测试类
 
 ```bash
+# 0. 检查配置
+python scripts/config_manager.py show
+
 # 1. 查找测试类
 Glob: **/UserServiceTest.java
 # 结果: D:\workspace\...\service\src\test\java\cn\xs\service\UserServiceTest.java
 
-# 2. 编译测试代码
+# 2. 编译测试代码（假设 maven_home 为 C:/apache-maven-3.9.0）
 cd "D:\workspace\com.xiaoshi\gitlab\backendservice\motsa\xs-motsa-service"
-mvn test-compile
+C:/apache-maven-3.9.0/bin/mvn test-compile
 
 # 3. 运行测试类
-mvn test -Dtest=UserServiceTest
+C:/apache-maven-3.9.0/bin/mvn test -Dtest=UserServiceTest
 ```
 
 ### 示例 3: 运行特定测试方法
 
 ```bash
-# 运行 UserServiceTest 的 testCreateUser 方法
+# 运行 UserServiceTest 的 testCreateUser 方法（假设 maven_home 为 C:/apache-maven-3.9.0）
 cd "D:\workspace\com.xiaoshi\gitlab\backendservice\motsa\xs-motsa-service"
-mvn test -Dtest=UserServiceTest#testCreateUser
+C:/apache-maven-3.9.0/bin/mvn test -Dtest=UserServiceTest#testCreateUser
 
 # 运行多个测试方法
-mvn test -Dtest=UserServiceTest#testCreateUser+testUpdateUser+testDeleteUser
+C:/apache-maven-3.9.0/bin/mvn test -Dtest=UserServiceTest#testCreateUser+testUpdateUser+testDeleteUser
 ```
 
 ### 示例 4: 运行所有 Service 层测试
 
 ```bash
-# 使用通配符运行所有 Service 测试
+# 使用通配符运行所有 Service 测试（假设 maven_home 为 C:/apache-maven-3.9.0）
 cd "D:\workspace\com.xiaoshi\gitlab\backendservice\motsa\xs-motsa-service"
-mvn test -Dtest=*ServiceTest
+C:/apache-maven-3.9.0/bin/mvn test -Dtest=*ServiceTest
 ```
 
 ## 常见问题
@@ -275,53 +354,68 @@ mvn test -Dtest=*ServiceTest
 
 ## 注意事项
 
-1. **工作目录**：确保在正确的模块目录下执行命令
-2. **类名格式**：
+1. **配置优先**：在执行任何命令前，必须先确保配置已正确设置（使用 `config_manager.py`）
+2. **使用配置路径**：所有 Maven 和 Java 命令必须使用配置文件中指定的路径
+3. **工作目录**：确保在正确的模块目录下执行命令
+4. **类名格式**：
    - Main 方法：必须使用完全限定名（包名.类名），如 `cn.xs.servarea.test.MyExcelUtilsTest`
    - 测试类：只需要类名，如 `UserServiceTest`，Maven 会自动查找
-3. **依赖顺序**：在多模块项目中，先安装依赖再执行
-4. **编译状态**：如果代码有修改，先执行 `mvn compile` 或 `mvn test-compile` 重新编译
-5. **测试命名规范**：
+5. **依赖顺序**：在多模块项目中，先安装依赖再执行
+6. **编译状态**：如果代码有修改，先执行编译命令重新编译
+7. **测试命名规范**：
    - JUnit 测试类通常以 `Test` 结尾或以 `Test` 开头
    - 测试方法通常以 `test` 开头（JUnit 4）或使用 `@Test` 注解（JUnit 5）
+8. **Maven Settings**：如果配置了自定义的 `maven_settings`，记得在命令中添加 `-s {maven_settings}` 参数
 
 ## 相关命令
 
+**注意**：以下所有命令中的 `{maven_home}` 需要替换为配置中的 Maven Home 路径，`{maven_settings}` 需要替换为配置中的 Maven settings.xml 路径（如果配置了）。
+
 ```bash
+# 查看当前配置
+python scripts/config_manager.py show
+
+# 重置配置
+python scripts/config_manager.py reset
+
 # 编译项目
-mvn compile
+{maven_home}/bin/mvn compile
 
 # 编译测试代码
-mvn test-compile
+{maven_home}/bin/mvn test-compile
 
 # 编译并安装到本地仓库
-mvn install
+{maven_home}/bin/mvn install
 
 # 只编译不运行测试
-mvn compile -DskipTests
+{maven_home}/bin/mvn compile -DskipTests
 
 # 清理并重新编译
-mvn clean compile
+{maven_home}/bin/mvn clean compile
 
 # 运行所有测试
-mvn test
+{maven_home}/bin/mvn test
 
 # 运行特定测试类
-mvn test -Dtest=TestClassName
+{maven_home}/bin/mvn test -Dtest=TestClassName
 
 # 运行特定测试方法
-mvn test -Dtest=TestClassName#testMethod
+{maven_home}/bin/mvn test -Dtest=TestClassName#testMethod
 
 # 跳过测试
-mvn install -DskipTests
+{maven_home}/bin/mvn install -DskipTests
 
 # 查看项目依赖树
-mvn dependency:tree
+{maven_home}/bin/mvn dependency:tree
 
 # 查看有效的 POM 配置
-mvn help:effective-pom
+{maven_home}/bin/mvn help:effective-pom
 
 # 查看测试报告
 # 报告位置: target/surefire-reports/
 ls target/surefire-reports/
+
+# 如果配置了 maven_settings，在命令后添加 -s 参数
+{maven_home}/bin/mvn compile -s {maven_settings}
+{maven_home}/bin/mvn test -Dtest=TestClassName -s {maven_settings}
 ```
